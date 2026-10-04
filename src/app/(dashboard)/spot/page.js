@@ -116,7 +116,7 @@ export default function SpotPage() {
       )}
 
       <footer className="text-center text-gray-500 text-xs md:text-sm py-4">
-        <p>Binance Portfolio Risk Dashboard</p>
+        <p>Gokul Dashboard</p>
       </footer>
     </div>
   );

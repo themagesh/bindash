@@ -5,7 +5,8 @@ import { useFetch, formatCurrency } from '@/lib/utils';
 
 export default function TradesPage() {
   const [activeTab, setActiveTab] = useState('profits');
-  
+  const [activeRange, setActiveRange] = useState('month');
+
   // Fetch last 1000 trades to cover ~1 month
   const { data: trades, loading, error, refetch } = useFetch('/api/trades?type=pnl&limit=1000', { refreshInterval: 10000 });
 
@@ -19,11 +20,18 @@ export default function TradesPage() {
     });
   };
 
-  // Filter trades from 1st to end of current month
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0).getTime();
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
-  const recentTrades = trades?.filter(t => t.timestamp >= startOfMonth && t.timestamp <= endOfMonth) || [];
+  const rangeLabel = activeRange === 'week' ? 'This Week' : 'This Month';
+  const now = Date.now();
+  const startOfWeek = now - (7 * 24 * 60 * 60 * 1000);
+  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1, 0, 0, 0, 0).getTime();
+  const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+  const recentTrades = (trades || []).filter((trade) => {
+    const timestamp = Number(trade.timestamp);
+    if (activeRange === 'week') {
+      return timestamp >= startOfWeek;
+    }
+    return timestamp >= startOfMonth && timestamp <= endOfMonth;
+  });
 
   // Group losses by symbol (cumulative)
   const lossesBySymbol = recentTrades
@@ -86,9 +94,26 @@ export default function TradesPage() {
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-white">
-          Monthly PnL by Coin
+          {activeRange === 'week' ? 'Weekly' : 'Monthly'} PnL by Coin
         </h1>
-        <p className="text-gray-400 mt-1">Current month - Cumulative per symbol</p>
+        <p className="text-gray-400 mt-1">{rangeLabel} - Cumulative per symbol</p>
+      </div>
+
+      {/* Range Tabs */}
+      <div className="flex gap-2 mb-4">
+        {['week', 'month'].map((range) => (
+          <button
+            key={range}
+            onClick={() => setActiveRange(range)}
+            className={`flex-1 py-2.5 px-4 rounded-xl font-medium transition-all ${
+              activeRange === range
+                ? 'bg-blue-500/20 border-2 border-blue-500 text-blue-400'
+                : 'bg-gray-800/50 border border-gray-700 text-gray-400 hover:bg-gray-700/50'
+            }`}
+          >
+            {range === 'week' ? 'Week' : 'Month'}
+          </button>
+        ))}
       </div>
 
       {/* Stats Cards */}
@@ -170,13 +195,15 @@ export default function TradesPage() {
         <div className="bg-gray-800/50 rounded-xl border border-gray-700 overflow-hidden">
           <div className="p-4 border-b border-gray-700">
             <h2 className="text-lg font-semibold text-white">
-              {activeTab === 'losses' ? '📉 Losses' : '📈 Profits'} by Coin (This Month)
+              {activeTab === 'losses' ? '📉 Losses' : '📈 Profits'} by Coin ({rangeLabel})
             </h2>
           </div>
 
           {currentArray.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
-              {activeTab === 'losses' ? 'No losses in the last 30 days 🎉' : 'No profits in the last 30 days'}
+              {activeTab === 'losses'
+                ? `No losses in the last ${activeRange === 'week' ? '7 days' : 'month'} 🎉`
+                : `No profits in the last ${activeRange === 'week' ? '7 days' : 'month'}`}
             </div>
           ) : (
             <>
@@ -242,7 +269,7 @@ export default function TradesPage() {
       {/* Footer */}
       <div className="mt-6 text-center text-gray-500 text-sm">
         <p>
-          Showing cumulative {activeTab} per coin for current month
+          Showing cumulative {activeTab} per coin for {rangeLabel.toLowerCase()}
         </p>
       </div>
     </div>

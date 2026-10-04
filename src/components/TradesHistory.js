@@ -1,8 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { useFetch, formatCurrency } from '@/lib/utils';
 
 export default function TradesHistory() {
+  const [activeRange, setActiveRange] = useState('week');
   const { data: trades, loading, error } = useFetch('/api/trades?type=pnl&limit=10', { refreshInterval: 10000 });
 
   const formatDate = (timestamp) => {
@@ -15,20 +17,42 @@ export default function TradesHistory() {
     });
   };
 
+  const now = Date.now();
+  const rangeStart = activeRange === 'week'
+    ? now - (7 * 24 * 60 * 60 * 1000)
+    : now - (30 * 24 * 60 * 60 * 1000);
+  const filteredTrades = (trades || []).filter((trade) => Number(trade.timestamp) >= rangeStart);
+
   // PnL stats
-  const totalPnL = trades?.reduce((sum, t) => sum + t.income, 0) || 0;
-  const winCount = trades?.filter(t => t.income > 0).length || 0;
-  const lossCount = trades?.filter(t => t.income < 0).length || 0;
-  const winRate = trades?.length > 0 ? ((winCount / trades.length) * 100).toFixed(1) : 0;
-  const totalLoss = trades?.filter(t => t.income < 0).reduce((sum, t) => sum + t.income, 0) || 0;
-  const totalProfit = trades?.filter(t => t.income > 0).reduce((sum, t) => sum + t.income, 0) || 0;
+  const totalPnL = filteredTrades.reduce((sum, t) => sum + t.income, 0) || 0;
+  const winCount = filteredTrades.filter(t => t.income > 0).length || 0;
+  const lossCount = filteredTrades.filter(t => t.income < 0).length || 0;
+  const winRate = filteredTrades.length > 0 ? ((winCount / filteredTrades.length) * 100).toFixed(1) : 0;
+  const totalLoss = filteredTrades.filter(t => t.income < 0).reduce((sum, t) => sum + t.income, 0) || 0;
+  const totalProfit = filteredTrades.filter(t => t.income > 0).reduce((sum, t) => sum + t.income, 0) || 0;
 
   return (
     <div className="space-y-4">
       {/* Header */}
       <div>
         <h2 className="text-lg md:text-xl font-semibold text-white">Trade History</h2>
-        <p className="text-gray-400 text-sm">Last 10 closed positions (Realized PnL)</p>
+        <p className="text-gray-400 text-sm">{activeRange === 'week' ? 'Last 7 days' : 'Last 30 days'} (Realized PnL)</p>
+      </div>
+
+      <div className="flex gap-2">
+        {['week', 'month'].map((range) => (
+          <button
+            key={range}
+            onClick={() => setActiveRange(range)}
+            className={`flex-1 py-2 px-3 rounded-xl border text-sm font-medium ${
+              activeRange === range
+                ? 'bg-blue-500/20 border-blue-500 text-blue-400'
+                : 'bg-gray-800/50 border-gray-700 text-gray-400'
+            }`}
+          >
+            {range === 'week' ? 'Week' : 'Month'}
+          </button>
+        ))}
       </div>
 
       {/* Stats Cards */}
@@ -92,7 +116,7 @@ export default function TradesHistory() {
             <h3 className="text-lg font-semibold text-white">Realized PnL History</h3>
           </div>
 
-          {trades.length === 0 ? (
+          {filteredTrades.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               No trade history found
             </div>
@@ -100,7 +124,7 @@ export default function TradesHistory() {
             <>
               {/* Mobile Card View */}
               <div className="block md:hidden divide-y divide-gray-700">
-                {trades.map((trade, index) => (
+                {filteredTrades.map((trade, index) => (
                   <div key={trade.id || index} className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-white font-medium">{trade.symbol}</span>
@@ -135,7 +159,7 @@ export default function TradesHistory() {
                     </tr>
                   </thead>
                   <tbody>
-                    {trades.map((trade, index) => (
+                    {filteredTrades.map((trade, index) => (
                       <tr 
                         key={trade.id || index} 
                         className="border-b border-gray-700/50 hover:bg-gray-700/30"

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useFetch, formatCurrency } from '@/lib/utils';
 
 export default function TradesHistory() {
-  const [activeRange, setActiveRange] = useState('week');
+  const [activeRange, setActiveRange] = useState('day');
   const { data: trades, loading, error } = useFetch('/api/trades?type=pnl&limit=10', { refreshInterval: 10000 });
 
   const formatDate = (timestamp) => {
@@ -18,9 +18,11 @@ export default function TradesHistory() {
   };
 
   const now = Date.now();
-  const rangeStart = activeRange === 'week'
-    ? now - (7 * 24 * 60 * 60 * 1000)
-    : now - (30 * 24 * 60 * 60 * 1000);
+  const rangeStart = activeRange === 'day'
+    ? new Date(new Date().setHours(0, 0, 0, 0)).getTime()
+    : activeRange === 'week'
+      ? now - (7 * 24 * 60 * 60 * 1000)
+      : now - (30 * 24 * 60 * 60 * 1000);
   const filteredTrades = (trades || []).filter((trade) => Number(trade.timestamp) >= rangeStart);
 
   // PnL stats
@@ -36,11 +38,13 @@ export default function TradesHistory() {
       {/* Header */}
       <div>
         <h2 className="text-lg md:text-xl font-semibold text-white">Trade History</h2>
-        <p className="text-gray-400 text-sm">{activeRange === 'week' ? 'Last 7 days' : 'Last 30 days'} (Realized PnL)</p>
+        <p className="text-gray-400 text-sm">
+          {activeRange === 'day' ? 'Today' : activeRange === 'week' ? 'Last 7 days' : 'Last 30 days'} (Realized PnL)
+        </p>
       </div>
 
       <div className="flex gap-2">
-        {['week', 'month'].map((range) => (
+        {['day', 'week', 'month'].map((range) => (
           <button
             key={range}
             onClick={() => setActiveRange(range)}
@@ -50,7 +54,7 @@ export default function TradesHistory() {
                 : 'bg-gray-800/50 border-gray-700 text-gray-400'
             }`}
           >
-            {range === 'week' ? 'Week' : 'Month'}
+            {range.charAt(0).toUpperCase() + range.slice(1)}
           </button>
         ))}
       </div>

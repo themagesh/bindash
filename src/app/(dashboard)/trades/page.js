@@ -5,7 +5,7 @@ import { useFetch, formatCurrency } from '@/lib/utils';
 
 export default function TradesPage() {
   const [activeTab, setActiveTab] = useState('profits');
-  const [activeRange, setActiveRange] = useState('month');
+  const [activeRange, setActiveRange] = useState('day');
 
   // Fetch last 1000 trades to cover ~1 month
   const { data: trades, loading, error, refetch } = useFetch('/api/trades?type=pnl&limit=1000', { refreshInterval: 10000 });
@@ -20,13 +20,17 @@ export default function TradesPage() {
     });
   };
 
-  const rangeLabel = activeRange === 'week' ? 'This Week' : 'This Month';
+  const rangeLabel = activeRange === 'day' ? 'Today' : activeRange === 'week' ? 'This Week' : 'This Month';
   const now = Date.now();
+  const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
   const startOfWeek = now - (7 * 24 * 60 * 60 * 1000);
   const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1, 0, 0, 0, 0).getTime();
   const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999).getTime();
   const recentTrades = (trades || []).filter((trade) => {
     const timestamp = Number(trade.timestamp);
+    if (activeRange === 'day') {
+      return timestamp >= startOfDay;
+    }
     if (activeRange === 'week') {
       return timestamp >= startOfWeek;
     }
@@ -101,7 +105,7 @@ export default function TradesPage() {
 
       {/* Range Tabs */}
       <div className="flex gap-2 mb-4">
-        {['week', 'month'].map((range) => (
+        {['day', 'week', 'month'].map((range) => (
           <button
             key={range}
             onClick={() => setActiveRange(range)}
@@ -111,7 +115,7 @@ export default function TradesPage() {
                 : 'bg-gray-800/50 border border-gray-700 text-gray-400 hover:bg-gray-700/50'
             }`}
           >
-            {range === 'week' ? 'Week' : 'Month'}
+            {range.charAt(0).toUpperCase() + range.slice(1)}
           </button>
         ))}
       </div>
@@ -202,8 +206,8 @@ export default function TradesPage() {
           {currentArray.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               {activeTab === 'losses'
-                ? `No losses in the last ${activeRange === 'week' ? '7 days' : 'month'} 🎉`
-                : `No profits in the last ${activeRange === 'week' ? '7 days' : 'month'}`}
+                ? `No losses in the last ${activeRange === 'day' ? 'day' : activeRange === 'week' ? '7 days' : 'month'} 🎉`
+                : `No profits in the last ${activeRange === 'day' ? 'day' : activeRange === 'week' ? '7 days' : 'month'}`}
             </div>
           ) : (
             <>

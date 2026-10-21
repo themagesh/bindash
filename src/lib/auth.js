@@ -23,8 +23,12 @@ function safeEqual(a, b) {
 }
 
 export function isValidPassword(candidate) {
-  if (typeof candidate !== 'string' || candidate.length === 0) return false;
-  return safeEqual(candidate, getSitePassword());
+  if (typeof candidate !== 'string') return false;
+  // Trim so an accidental leading/trailing space (or a stray newline pasted
+  // from a password manager) does not cause a false "Invalid password".
+  const trimmed = candidate.trim();
+  if (trimmed.length === 0) return false;
+  return safeEqual(trimmed, getSitePassword());
 }
 
 function sign(payload) {

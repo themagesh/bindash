@@ -11,7 +11,7 @@
     "BINANCE_TESTNET": "false",
     "UPSTASH_REDIS_REST_URL": "https://flying-weasel-5083.upstash.io",
     "UPSTASH_REDIS_REST_TOKEN": "ARPbAAImcDFmNDI0Njg2YmM3ZGY0YjU5YTgwZTFlNDYxNDM1NWFiMHAxNTA4Mw",
-    "SITE_PASSWORD": "Daven@1234",
+    "SITE_PASSWORD": "Daven@12334",
     "AUTH_SECRET": "pRjtwNrW08u_GyUQAm82dl2TDOGOlOJt47at9wCORPgzEcY2W1KSyr6qVhMQcjlN"
   }
 }

@@ -21,11 +21,12 @@ export default function TradesPage() {
   };
 
   const rangeLabel = activeRange === 'day' ? 'Today' : activeRange === 'week' ? 'This Week' : 'This Month';
-  const now = Date.now();
-  const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).getTime();
+  const [now] = useState(() => Date.now());
+  const startOfDay = new Date(now).setHours(0, 0, 0, 0);
   const startOfWeek = now - (7 * 24 * 60 * 60 * 1000);
-  const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1, 0, 0, 0, 0).getTime();
-  const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0, 23, 59, 59, 999).getTime();
+  const startDate = new Date(now);
+  const startOfMonth = new Date(startDate.getFullYear(), startDate.getMonth(), 1).getTime();
+  const endOfMonth = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
   const recentTrades = (trades || []).filter((trade) => {
     const timestamp = Number(trade.timestamp);
     if (activeRange === 'day') {

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useFetch, formatCurrency } from '@/lib/utils';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import FuturesPositions from '@/components/FuturesPositions';
@@ -9,9 +9,9 @@ import FuturesRiskMetrics from '@/components/FuturesRiskMetrics';
 import MarketSentiment from '@/components/MarketSentiment';
 import PositionCharts from '@/components/PositionCharts';
 import GoalModal from '@/components/GoalModal';
+import ConnectionRequired from '@/components/ConnectionRequired';
 
 export default function FuturesPage() {
-  const [displayError, setDisplayError] = useState(null);
   const [goalModalOpen, setGoalModalOpen] = useState(true);
   const REFRESH_INTERVAL = 3000;
 
@@ -31,17 +31,16 @@ export default function FuturesPage() {
     refetch: refetchPendingOrders
   } = useFetch('/api/futures?type=orders', { refreshInterval: REFRESH_INTERVAL });
 
-  useEffect(() => {
-    if (futuresError) {
-      setDisplayError(futuresError);
-    } else if (displayError) {
-      const timer = setTimeout(() => setDisplayError(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [futuresError, displayError]);
-
   if (futuresLoading && !futuresData) {
     return <LoadingSpinner text="Loading futures data..." />;
+  }
+
+  if (futuresError && !futuresData) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <ConnectionRequired product="Binance Futures account" />
+      </div>
+    );
   }
 
   const { account: futuresAccount, positions: futuresPositions, riskMetrics: futuresRiskMetrics } = futuresData || {};
@@ -166,16 +165,15 @@ export default function FuturesPage() {
       {/* <MarketSentiment symbol="BTCUSDT" /> */}
 
       {/* Error Card - fixed to left side */}
-      {displayError && (
+      {futuresError && (
         <div className="fixed bottom-4 left-4 z-50 max-w-xs w-[calc(100vw-2rem)] md:w-80">
           <div className="bg-gray-900 border border-red-500/60 rounded-xl shadow-2xl p-4">
             <div className="flex items-start gap-3">
               <span className="text-red-400 text-lg mt-0.5">⚠️</span>
               <div className="flex-1 min-w-0">
                 <h4 className="text-red-400 font-semibold text-sm mb-1">API Rate Limit</h4>
-                <p className="text-gray-300 text-xs break-words leading-relaxed">{displayError}</p>
+                <p className="text-gray-300 text-xs break-words leading-relaxed">{futuresError}</p>
               </div>
-              <button onClick={() => setDisplayError(null)} className="text-gray-500 hover:text-gray-300 text-lg leading-none ml-1">×</button>
             </div>
             <div className="mt-3">
               <button onClick={refetchFutures} className="w-full py-1.5 bg-red-600/80 hover:bg-red-500 text-white rounded-lg text-xs font-medium">

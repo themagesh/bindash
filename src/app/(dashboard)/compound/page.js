@@ -231,7 +231,7 @@ export default function CompoundPage() {
           <div className="text-5xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-green-400 mb-2">Goal Achieved!</h2>
           <p className="text-gray-300">
-            You've reached {formatCurrency(targetAmount)} through compound trading!
+            You&apos;ve reached {formatCurrency(targetAmount)} through compound trading!
           </p>
         </div>
       )}

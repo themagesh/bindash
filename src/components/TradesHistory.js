@@ -17,7 +17,7 @@ export default function TradesHistory() {
     });
   };
 
-  const now = Date.now();
+  const [now] = useState(() => Date.now());
   const rangeStart = activeRange === 'day'
     ? new Date(new Date().setHours(0, 0, 0, 0)).getTime()
     : activeRange === 'week'

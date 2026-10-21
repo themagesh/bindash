@@ -4,49 +4,57 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function Navbar({ onRefresh, loading, progressData }) {
-      // Mobile trade summary (shown below navbar)
-      const MobileTradeSummary = () => (
-        progressData?.currentTradeNum ? (
-          <div className="md:hidden w-full px-4 py-3 z-30">
-            <div className="bg-gray-900/95 border border-blue-500/30 rounded-xl shadow-lg p-3 flex flex-col gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-[16px] text-blue-400 font-bold">Trade #{progressData.currentTradeNum}</span>
-                <span className="ml-auto text-[12px] text-gray-400 font-medium">Current</span>
-              </div>
-              <div className="flex flex-col gap-1 mt-1">
-                <div className="flex flex-row items-center justify-between">
-                  <span className="text-[13px] text-gray-300">Start</span>
-                  <span className="text-[13px] text-white font-semibold">${progressData.currentTradeStart?.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-                </div>
-                <div className="flex flex-row items-center justify-between">
-                  <span className="text-[13px] text-gray-300">Target</span>
-                  <span className={`text-[13px] font-bold ${progressData.currentTradeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>${progressData.currentTradeProfit?.toFixed(2)}
-                    {typeof progressData.currentTradeProfitPct === 'number' && (
-                      <span className="ml-1 text-[12px] font-medium">({progressData.currentTradeProfitPct.toFixed(2)}%)</span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex flex-row items-center justify-between">
-                  <span className="text-[13px] text-gray-300">End</span>
-                  <span className="text-[13px] text-blue-400 font-bold">${progressData.currentTradeEnd?.toLocaleString(undefined, {maximumFractionDigits:2})}</span>
-                </div>
-              </div>
-            </div>
+function MobileTradeSummary({ progressData }) {
+  if (!progressData?.currentTradeNum) return null;
+  return (
+    <div className="md:hidden w-full px-4 py-3 z-30">
+      <div className="bg-gray-900/95 border border-blue-500/30 rounded-xl shadow-lg p-3 flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-[16px] text-blue-400 font-bold">Trade #{progressData.currentTradeNum}</span>
+          <span className="ml-auto text-[12px] text-gray-400 font-medium">Current</span>
+        </div>
+        <div className="flex flex-col gap-1 mt-1">
+          <div className="flex flex-row items-center justify-between">
+            <span className="text-[13px] text-gray-300">Start</span>
+            <span className="text-[13px] text-white font-semibold">${progressData.currentTradeStart?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
           </div>
-        ) : null
-      );
-    // Extract current milestone info if available
+          <div className="flex flex-row items-center justify-between">
+            <span className="text-[13px] text-gray-300">Target</span>
+            <span className={`text-[13px] font-bold ${progressData.currentTradeProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>${progressData.currentTradeProfit?.toFixed(2)}</span>
+          </div>
+          <div className="flex flex-row items-center justify-between">
+            <span className="text-[13px] text-gray-300">End</span>
+            <span className="text-[13px] text-blue-400 font-bold">${progressData.currentTradeEnd?.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Navbar({ onRefresh, loading, progressData }) {
+  // Extract current milestone info if available
     const currentTradeNum = progressData?.currentTradeNum;
     const currentTradeStart = progressData?.currentTradeStart;
     const currentTradeProfit = progressData?.currentTradeProfit;
     const currentTradeEnd = progressData?.currentTradeEnd;
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      window.location.href = '/login';
+    }
+  };
 
   const navItems = [
     { href: '/', label: 'Futures' },
-    { href: '/spot', label: 'Spot' },
     { href: '/compound', label: '🎯 Goal' },
     { href: '/trades', label: '📊 History' },
   ];
@@ -140,6 +148,19 @@ export default function Navbar({ onRefresh, loading, progressData }) {
                 </svg>
               </button>
             )}
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              title="Log out"
+              aria-label="Log out"
+              className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 disabled:opacity-50 rounded-lg transition-all"
+            >
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
 
             {/* Mobile Menu Button */}
             <button

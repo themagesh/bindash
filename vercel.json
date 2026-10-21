@@ -4,12 +4,5 @@
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "regions": ["sin1"],
-  "env": {
-    "BINANCE_API_KEY": "pRw72oj6VzADzzEMkKUP2XhJSN5l9Y4iL3KlRe4dlTxefKPjpgqqfJZTvw0trwQg",
-    "BINANCE_API_SECRET": "ox4cUC4i5cijjqJy4YvrqtJf0zUYAFuLwr7FdxLXlwJej9X2qJKikOjuMUtd5tdo",
-    "BINANCE_TESTNET": "false",
-    "UPSTASH_REDIS_REST_URL": "https://flying-weasel-5083.upstash.io",
-    "UPSTASH_REDIS_REST_TOKEN": "ARPbAAImcDFmNDI0Njg2YmM3ZGY0YjU5YTgwZTFlNDYxNDM1NWFiMHAxNTA4Mw"
-  }
+  "regions": ["sin1"]
 }

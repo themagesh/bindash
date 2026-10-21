@@ -26,25 +26,25 @@ Add these to your `.env.local` file (local) or Vercel dashboard (production):
 ## Key Files
 
 ### API Routes
-- `src/app/api/portfolio/route.js` - Portfolio data endpoint
-- `src/app/api/prices/route.js` - Price data endpoint
-- `src/app/api/orders/route.js` - Orders endpoint
-- `src/app/api/futures/route.js` - Futures positions and account endpoint
+- `src/app/api/futures/route.js` - Futures positions, account, and order endpoint
+- `src/app/api/trades/route.js` - Futures trade history endpoint
+- `src/app/api/compound/route.js` - Compound goal data endpoint
 
 ### Libraries
-- `src/lib/binance.js` - Binance API integration (Spot + Futures)
-- `src/lib/risk.js` - Risk metrics calculations
+- `src/lib/binance.js` - Binance Futures API integration
 - `src/lib/utils.js` - Utility functions and hooks
 
 ### Components
-- `src/components/AllocationChart.js` - Pie chart for portfolio allocation
-- `src/components/HoldingsTable.js` - Table of asset holdings
-- `src/components/RiskMetrics.js` - Risk analysis cards
-- `src/components/PortfolioHeader.js` - Header with total value
-- `src/components/OpenOrders.js` - Open orders display
 - `src/components/FuturesPositions.js` - Futures positions table
 - `src/components/FuturesRiskMetrics.js` - Futures risk metrics cards
-- `src/components/ApiKeySetup.js` - Demo mode instructions
+- `src/components/PositionCharts.js` - Per-position TradingView charts
+- `src/components/MarketSentiment.js` - TradingView technical analysis widget
+- `src/components/PortfolioHeader.js` - Header with total balance
+- `src/components/PendingOrders.js` - Pending limit orders table
+- `src/components/GoalModal.js` - Goal tracker modal
+- `src/components/GoalTracker.js` - Goal tracker display
+- `src/components/TradesHistory.js` - Trade history display
+- `src/components/ConnectionRequired.js` - Missing credentials notice
 - `src/components/LoadingSpinner.js` - Loading component
 
 ## Deployment to Vercel

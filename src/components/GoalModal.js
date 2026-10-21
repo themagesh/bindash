@@ -239,7 +239,7 @@ export default function GoalModal({ isOpen, onClose, futuresAccount }) {
                 <div className="text-4xl mb-3">🎉</div>
                 <h3 className="text-lg font-bold text-green-400 mb-1">Goal Achieved!</h3>
                 <p className="text-gray-400 text-sm">
-                  You've reached {formatCurrency(targetAmount)}!
+                  You&apos;ve reached {formatCurrency(targetAmount)}!
                 </p>
               </div>
             )}

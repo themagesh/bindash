@@ -55,10 +55,15 @@ export default function News() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const selectFeed = (index) => {
     setLoading(true);
     setError(null);
-    fetch(RSS_SOURCES[tab].url)
+    setTab(index);
+  };
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(RSS_SOURCES[tab].url, { signal: controller.signal })
       .then(res => res.text())
       .then(xml => {
         const parsed = parseRSS(xml).map(a => ({ ...a, source: RSS_SOURCES[tab].name }));
@@ -66,9 +71,11 @@ export default function News() {
         setLoading(false);
       })
       .catch(err => {
+        if (err.name === 'AbortError') return;
         setError('Failed to load news feed');
         setLoading(false);
       });
+    return () => controller.abort();
   }, [tab]);
 
   return (
@@ -80,7 +87,7 @@ export default function News() {
           {RSS_SOURCES.map((src, i) => (
             <button
               key={src.name}
-              onClick={() => setTab(i)}
+              onClick={() => selectFeed(i)}
               className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all border border-gray-700/60 focus:outline-none ${
                 tab === i ? 'bg-blue-600 text-white shadow' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
               }`}
@@ -100,6 +107,8 @@ export default function News() {
               <li key={i} className="bg-gray-800 rounded-xl p-4 border border-gray-700/50 flex flex-col items-center">
                 {a.image && (
                   <a href={a.link} target="_blank" rel="noopener noreferrer" className="block w-full mb-3">
+                    {/* RSS images come from arbitrary external hosts, so Next Image optimization is not available. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={a.image}
                       alt={a.title}

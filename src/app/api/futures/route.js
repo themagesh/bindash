@@ -21,10 +21,7 @@ export async function GET(request) {
 
     let data;
     
-    if (type === 'debug_orders') {
-      // Temporary debug: see raw open orders from Binance
-      data = await getFuturesOpenOrders();
-    } else if (type === 'account') {
+    if (type === 'account') {
       data = await getFuturesAccount();
     } else if (type === 'orders') {
       const symbol = searchParams.get('symbol');
@@ -42,7 +39,7 @@ export async function GET(request) {
         account,
         positions,
         riskMetrics,
-        _debug_openOrders: rawOpenOrders,
+        openOrders: rawOpenOrders,
       };
     }
 

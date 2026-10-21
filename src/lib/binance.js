@@ -1,10 +1,6 @@
 import crypto from 'crypto';
 import axios from 'axios';
 
-// Spot API URLs
-const BASE_URL = 'https://api.binance.com';
-const TESTNET_URL = 'https://testnet.binance.vision';
-
 // Futures API URLs
 const FUTURES_URL = 'https://fapi.binance.com';
 const FUTURES_TESTNET_URL = 'https://testnet.binancefuture.com';
@@ -15,11 +11,6 @@ let lastWeightUpdate = Date.now();
 
 export function getApiWeight() {
   return { weight: currentApiWeight, updatedAt: lastWeightUpdate };
-}
-
-// Get the base URL based on environment
-function getBaseUrl() {
-  return process.env.BINANCE_TESTNET === 'true' ? TESTNET_URL : BASE_URL;
 }
 
 // Get futures base URL
@@ -35,30 +26,10 @@ function createSignature(queryString, secret) {
     .digest('hex');
 }
 
-// Cache for server time offset to avoid rate limiting
-let serverTimeOffset = null;
-let lastTimeSync = 0;
-const TIME_SYNC_INTERVAL = 1000; // Re-sync every 1 second
-
-// Get server time from Binance to avoid timestamp issues (with caching)
-async function getServerTime() {
-  const now = Date.now();
-  if (serverTimeOffset === null || now - lastTimeSync > TIME_SYNC_INTERVAL) {
-    try {
-      const response = await axios.get(`${getBaseUrl()}/api/v3/time`);
-      serverTimeOffset = response.data.serverTime - now;
-      lastTimeSync = now;
-    } catch (error) {
-      // If we can't sync, use local time with cached offset
-      if (serverTimeOffset === null) serverTimeOffset = 0;
-    }
-  }
-  return Date.now() + serverTimeOffset;
-}
-
 // Cache for futures server time offset
 let futuresTimeOffset = null;
 let lastFuturesTimeSync = 0;
+const TIME_SYNC_INTERVAL = 1000; // Re-sync every 1 second
 
 // Get futures server time (with caching)
 async function getFuturesServerTime() {
@@ -74,50 +45,6 @@ async function getFuturesServerTime() {
     }
   }
   return Date.now() + futuresTimeOffset;
-}
-
-// Make authenticated request to Binance API
-async function authenticatedRequest(endpoint, params = {}) {
-  const apiKey = process.env.BINANCE_API_KEY?.trim();
-  const apiSecret = process.env.BINANCE_API_SECRET?.trim();
-  
-  if (!apiKey || !apiSecret) {
-    throw new Error('API keys not configured');
-  }
-
-  const timestamp = await getServerTime();
-  const queryParams = { ...params, timestamp };
-  const queryString = new URLSearchParams(queryParams).toString();
-  const signature = createSignature(queryString, apiSecret);
-  
-  const url = `${getBaseUrl()}${endpoint}?${queryString}&signature=${signature}`;
-  
-  try {
-    const response = await axios.get(url, {
-      headers: {
-        'X-MBX-APIKEY': apiKey,
-      },
-    });
-    // Track API weight from headers
-    const weight = response.headers['x-mbx-used-weight-1m'];
-    if (weight) {
-      currentApiWeight = parseInt(weight);
-      lastWeightUpdate = Date.now();
-    }
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      // Track weight even on error
-      const weight = error.response.headers?.['x-mbx-used-weight-1m'];
-      if (weight) {
-        currentApiWeight = parseInt(weight);
-        lastWeightUpdate = Date.now();
-      }
-      console.error('Binance API Error:', error.response.data);
-      throw new Error(`Binance API: ${error.response.data.msg || error.response.data.code || 'Unknown error'}`);
-    }
-    throw error;
-  }
 }
 
 // Make authenticated request to Binance Futures API
@@ -173,189 +100,6 @@ async function futuresPublicRequest(endpoint, params = {}) {
   return response.data;
 }
 
-// Make public request to Binance API
-async function publicRequest(endpoint, params = {}) {
-  const queryString = new URLSearchParams(params).toString();
-  const url = `${getBaseUrl()}${endpoint}${queryString ? '?' + queryString : ''}`;
-  
-  const response = await axios.get(url);
-  return response.data;
-}
-
-// Fetch account balance
-export async function getAccountBalance() {
-  try {
-    const accountInfo = await authenticatedRequest('/api/v3/account');
-    const nonZeroBalances = {};
-    
-    for (const balance of accountInfo.balances) {
-      const free = parseFloat(balance.free);
-      const locked = parseFloat(balance.locked);
-      const total = free + locked;
-      
-      if (total > 0) {
-        nonZeroBalances[balance.asset] = {
-          free,
-          used: locked,
-          total,
-        };
-      }
-    }
-    
-    return nonZeroBalances;
-  } catch (error) {
-    console.error('Error fetching balance:', error.message);
-    throw error;
-  }
-}
-
-// Fetch current prices for all symbols
-export async function getAllPrices() {
-  try {
-    const prices = await publicRequest('/api/v3/ticker/price');
-    const priceMap = {};
-    
-    for (const item of prices) {
-      priceMap[item.symbol] = parseFloat(item.price);
-    }
-    
-    return priceMap;
-  } catch (error) {
-    console.error('Error fetching prices:', error.message);
-    throw error;
-  }
-}
-
-// Fetch 24hr ticker data for specific symbols
-export async function get24hrTickers(symbols) {
-  try {
-    const tickers = await publicRequest('/api/v3/ticker/24hr');
-    const tickerMap = {};
-    
-    for (const ticker of tickers) {
-      if (symbols.includes(ticker.symbol)) {
-        tickerMap[ticker.symbol] = {
-          price: parseFloat(ticker.lastPrice),
-          change24h: parseFloat(ticker.priceChangePercent),
-          high24h: parseFloat(ticker.highPrice),
-          low24h: parseFloat(ticker.lowPrice),
-          volume24h: parseFloat(ticker.quoteVolume),
-        };
-      }
-    }
-    
-    return tickerMap;
-  } catch (error) {
-    console.error('Error fetching tickers:', error.message);
-    throw error;
-  }
-}
-
-// Calculate portfolio value in USD
-export async function calculatePortfolioValue(balances) {
-  try {
-    const prices = await getAllPrices();
-    const symbols = Object.keys(balances)
-      .filter(currency => currency !== 'USDT' && currency !== 'USD' && currency !== 'BUSD')
-      .map(currency => `${currency}USDT`);
-    
-    const tickers = symbols.length > 0 ? await get24hrTickers(symbols) : {};
-    
-    let totalValue = 0;
-    const holdings = [];
-    
-    for (const [currency, amount] of Object.entries(balances)) {
-      let valueUSD = 0;
-      let price = 0;
-      let change24h = 0;
-      
-      if (currency === 'USDT' || currency === 'USD' || currency === 'BUSD') {
-        valueUSD = amount.total;
-        price = 1;
-      } else {
-        const symbol = `${currency}USDT`;
-        if (prices[symbol]) {
-          price = prices[symbol];
-          change24h = tickers[symbol]?.change24h || 0;
-          valueUSD = amount.total * price;
-        }
-      }
-      
-      if (valueUSD > 0.01) {
-        holdings.push({
-          currency,
-          amount: amount.total,
-          free: amount.free,
-          used: amount.used,
-          price,
-          valueUSD,
-          change24h,
-        });
-        totalValue += valueUSD;
-      }
-    }
-    
-    // Calculate allocation percentages
-    holdings.forEach(holding => {
-      holding.allocation = (holding.valueUSD / totalValue) * 100;
-    });
-    
-    // Sort by value descending
-    holdings.sort((a, b) => b.valueUSD - a.valueUSD);
-    
-    return { totalValue, holdings };
-  } catch (error) {
-    console.error('Error calculating portfolio value:', error.message);
-    throw error;
-  }
-}
-
-// Get open orders
-export async function getOpenOrders(symbol = undefined) {
-  try {
-    const params = symbol ? { symbol } : {};
-    const orders = await authenticatedRequest('/api/v3/openOrders', params);
-    
-    return orders.map(order => ({
-      id: order.orderId.toString(),
-      symbol: order.symbol,
-      side: order.side.toLowerCase(),
-      type: order.type.toLowerCase(),
-      price: parseFloat(order.price),
-      amount: parseFloat(order.origQty),
-      filled: parseFloat(order.executedQty),
-      remaining: parseFloat(order.origQty) - parseFloat(order.executedQty),
-      status: order.status.toLowerCase(),
-      timestamp: order.time,
-      datetime: new Date(order.time).toISOString(),
-    }));
-  } catch (error) {
-    console.error('Error fetching open orders:', error.message);
-    throw error;
-  }
-}
-
-// Get recent trades
-export async function getRecentTrades(symbol = 'BTCUSDT', limit = 50) {
-  try {
-    const trades = await authenticatedRequest('/api/v3/myTrades', { symbol, limit });
-    
-    return trades.map(trade => ({
-      id: trade.id.toString(),
-      symbol: trade.symbol,
-      side: trade.isBuyer ? 'buy' : 'sell',
-      price: parseFloat(trade.price),
-      amount: parseFloat(trade.qty),
-      cost: parseFloat(trade.quoteQty),
-      timestamp: trade.time,
-      datetime: new Date(trade.time).toISOString(),
-    }));
-  } catch (error) {
-    console.error('Error fetching trades:', error.message);
-    throw error;
-  }
-}
-
 // ========== FUTURES API FUNCTIONS ==========
 
 // Get futures account information
@@ -393,11 +137,6 @@ export async function getFuturesPositions() {
       futuresAuthenticatedRequest('/fapi/v1/openOrders')
     ]);
     
-    // Debug: log all open order types to diagnose SL/TP detection
-    console.log('[FuturesPositions] openOrders raw:', JSON.stringify(openOrders.map(o => ({
-      symbol: o.symbol, type: o.type, side: o.side, stopPrice: o.stopPrice, price: o.price, positionSide: o.positionSide
-    }))));
-
     // Group stop loss and take profit orders by symbol
     const stopLossOrders = {};
     const takeProfitOrders = {};
@@ -529,13 +268,14 @@ export async function getFuturesMarkPrices() {
         nextFundingTime: item.nextFundingTime,
       };
     }
-    
+
     return priceMap;
   } catch (error) {
     console.error('Error fetching futures mark prices:', error.message);
     throw error;
   }
 }
+
 
 // Get futures income history (PnL history)
 export async function getFuturesIncome(incomeType = undefined, limit = 100) {

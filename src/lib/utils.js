@@ -95,12 +95,3 @@ export function getChangeColor(value) {
   if (value < 0) return 'text-red-400';
   return 'text-gray-500';
 }
-
-export function getRiskColor(riskLevel) {
-  switch (riskLevel) {
-    case 'Conservative': return 'text-green-400 bg-green-400/10';
-    case 'Moderate': return 'text-yellow-400 bg-yellow-400/10';
-    case 'Aggressive': return 'text-red-400 bg-red-400/10';
-    default: return 'text-gray-500 bg-gray-500/10';
-  }
-}

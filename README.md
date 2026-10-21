@@ -1,20 +1,20 @@
-# Binance Portfolio Risk Dashboard
+# Binance Futures Dashboard
 
-A real-time portfolio risk management dashboard for Binance, built with Next.js and designed for Vercel deployment.
+A real-time futures position risk management dashboard for Binance, built with Next.js and designed for Vercel deployment.
 
 ## Features
 
-- **Portfolio Overview**: View total portfolio value and asset holdings
-- **Risk Analysis**: 
-  - Diversification score
-  - Largest position concentration
-  - Stablecoin ratio
-  - Volatility exposure assessment
+- **Account Overview**: View total wallet balance, margin balance, and unrealized PnL
+- **Futures Risk Analysis**:
+  - Total unrealized PnL and PnL percentage
+  - Maximum and average leverage
+  - Margin usage percentage
+  - Long/short exposure split
   - Overall risk level classification
-- **Holdings Table**: Detailed view of all assets with prices, 24h changes, and allocation percentages
-- **Allocation Chart**: Visual pie chart of portfolio distribution
-- **Open Orders**: View pending limit orders
-- **Demo Mode**: Works without API keys using sample data
+- **Open Positions**: Detailed view of positions with entry, mark, liquidation price, and stop-loss/take-profit levels
+- **Position Charts**: TradingView technical analysis charts per open position
+- **Trade History**: Cumulative realized profits and losses per symbol
+- **Goal Tracker**: Compound growth projections toward a target balance
 
 ## Getting Started
 
@@ -22,7 +22,7 @@ A real-time portfolio risk management dashboard for Binance, built with Next.js 
 
 - Node.js 18+
 - npm or yarn
-- Binance account with API access (optional for demo mode)
+- Binance account with API access (Futures trading permission required to close positions)
 
 ### Installation
 
@@ -61,7 +61,8 @@ npm run dev
 1. Go to [Binance API Management](https://www.binance.com/en/my/settings/api-management)
 2. Create a new API key
 3. **Important Security Settings**:
-   - Enable only "Read" permissions (no trading access needed)
+   - Enable "Read" permissions for viewing data
+   - Enable "Enable Futures" if you want to close positions from the dashboard
    - Restrict IP access to your server's IP address
    - Never share your API secret
 
@@ -96,22 +97,30 @@ bindash/
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── portfolio/route.js   # Portfolio data endpoint
-│   │   │   ├── prices/route.js      # Price data endpoint
-│   │   │   └── orders/route.js      # Orders endpoint
+│   │   │   ├── compound/route.js     # Compound goal data endpoint
+│   │   │   ├── futures/route.js      # Futures positions, account, and order endpoint
+│   │   │   └── trades/route.js       # Futures trade history endpoint
+│   │   ├── (dashboard)/
+│   │   │   ├── compound/page.js       # Goal tracker page
+│   │   │   ├── page.js                # Futures dashboard page
+│   │   │   └── trades/page.js         # Trade history page
 │   │   ├── layout.js
-│   │   ├── page.js                  # Main dashboard
 │   │   └── globals.css
 │   ├── components/
-│   │   ├── AllocationChart.js       # Portfolio pie chart
-│   │   ├── ApiKeySetup.js           # Demo mode instructions
-│   │   ├── HoldingsTable.js         # Holdings data table
+│   │   ├── ConnectionRequired.js    # Missing credentials notice
+│   │   ├── FuturesPositions.js      # Futures positions table
+│   │   ├── FuturesRiskMetrics.js    # Futures risk metrics cards
+│   │   ├── GoalModal.js             # Goal tracker modal
+│   │   ├── GoalTracker.js           # Goal tracker display
 │   │   ├── LoadingSpinner.js        # Loading component
-│   │   ├── OpenOrders.js            # Open orders table
-│   │   ├── PortfolioHeader.js       # Header with total value
-│   │   └── RiskMetrics.js           # Risk analysis cards
+│   │   ├── MarketSentiment.js       # TradingView technical analysis widget
+│   │   ├── Navbar.js                # Top navigation
+│   │   ├── PendingOrders.js         # Pending limit orders table
+│   │   ├── PortfolioHeader.js       # Header with total balance
+│   │   ├── PositionCharts.js        # Per-position TradingView charts
+│   │   └── TradesHistory.js         # Trade history display
 │   └── lib/
-│       ├── binance.js               # Binance API integration
+│       ├── binance.js               # Binance Futures API integration
 │       └── utils.js                 # Utility functions
 ├── vercel.json                      # Vercel configuration
 ├── .env.example                     # Environment template
@@ -122,25 +131,25 @@ bindash/
 
 | Metric | Description |
 |--------|-------------|
-| **Risk Level** | Overall assessment: Conservative, Moderate, or Aggressive |
-| **Diversification Score** | 0-100 scale based on asset distribution (higher = better) |
-| **Largest Position** | Percentage of portfolio in the top holding |
-| **Stablecoin Ratio** | Percentage held in stablecoins (USDT, USDC, etc.) |
-| **Volatility Exposure** | High/Medium/Low based on volatile asset holdings |
+| **Risk Level** | Overall assessment: Low, Medium, High, or Very High |
+| **Total PnL** | Sum of unrealized profit/loss across open positions |
+| **Max / Avg Leverage** | Highest and average leverage across open positions |
+| **Margin Usage** | Percentage of margin balance committed to positions |
+| **Long / Short Exposure** | Notional value on each side of the book |
 
 ## Security Considerations
 
 - API keys are stored as environment variables, never in code
-- Read-only API permissions are sufficient for this dashboard
-- No trading functionality - view only
+- Read-only API permissions are sufficient for viewing data; the "Force Close" action additionally requires Futures trading permission
 - Environment files are gitignored by default
+- Never put Binance, Redis, or any other secret in `vercel.json` or source control. Configure secrets in Vercel Project Settings and rotate any credential that has ever been committed.
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js (App Router)
 - **Styling**: Tailwind CSS
-- **Charts**: Recharts
-- **Binance API**: CCXT library
+- **Charts**: TradingView embedded widgets
+- **Binance API**: Binance Futures REST API via Axios
 - **Deployment**: Vercel
 
 ## License

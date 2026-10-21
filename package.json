@@ -19,9 +19,15 @@
     "react-sparklines": "^1.7.0"
   },
   "devDependencies": {
+    "@csstools/postcss-cascade-layers": "^6.0.2",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4"
-  }
+  },
+  "browserslist": [
+    "safari >= 12",
+    "ios_saf >= 12",
+    "chrome >= 60"
+  ]
 }
